@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GALACTIC FOOD STATION | 3D BOOTH DESIGNER — Ẩm Thực Ngân Hà (PTIT × STR4.SEC × ATTT D26)</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./lib/three/three.module.js",
+        "three/addons/": "./lib/three/addons/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- ======================== THANH TRÊN CÙNG (TOP BAR) ======================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">★</div>
+      <div class="brand-text">
+        <div class="brand-title">GALACTIC FOOD STATION <span class="brand-sep">|</span> <span class="brand-sub">3D BOOTH DESIGNER</span></div>
+        <div class="brand-meta">ẨM THỰC NGÂN HÀ • PTIT × STR4.SEC × AN TOÀN THÔNG TIN D26</div>
+      </div>
+    </div>
+
+    <nav class="main-nav" aria-label="Chế độ làm việc">
+      <button class="nav-tab active" data-mode="model" title="Quan sát & tùy chỉnh mô hình 3D">
+        <span class="tab-dot"></span>3D MODEL
+      </button>
+      <button class="nav-tab" data-mode="construction" title="Mô phỏng quy trình thi công 9 giai đoạn">
+        <span class="tab-dot"></span>CONSTRUCTION
+      </button>
+      <button class="nav-tab" data-mode="materials" title="Dự toán vật tư & ngân sách sinh viên (BOM)">
+        <span class="tab-dot"></span>MATERIALS
+      </button>
+      <button class="nav-tab" data-mode="blueprint" title="Bản vẽ kỹ thuật 2D mặt đứng, mặt bằng, mặt cắt">
+        <span class="tab-dot"></span>BLUEPRINT
+      </button>
+      <button class="nav-tab" data-mode="export" title="Xuất mô hình GLB, ảnh PNG, bảng CSV & tài liệu thi công">
+        <span class="tab-dot"></span>EXPORT
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="cost-pill" id="topCostPill" title="Tổng chi phí dự kiến (nhấn để mở bảng dự toán)">
+        <span class="cost-label">Dự toán:</span>
+        <strong id="topCostValue">0 ₫</strong>
+      </div>
+      <button class="action-btn" id="btnScreenshot" title="Chụp ảnh mô hình PNG">📷 PNG</button>
+      <button class="action-btn" id="btnFullscreen" title="Toàn màn hình">⛶ Fullscreen</button>
+      <button class="action-btn active" id="btnToggleRightPanel" title="Ẩn/hiện bảng điều khiển bên phải">⚙ Tùy chỉnh</button>
+    </div>
+  </header>
+
+  <!-- ======================== THANH CÔNG CỤ CAMERA & HIỂN THỊ ======================== -->
+  <div class="subbar">
+    <div class="cam-group">
+      <span class="subbar-label">GÓC NHÌN:</span>
+      <button class="cam-btn" data-cam="front">FRONT VIEW</button>
+      <button class="cam-btn" data-cam="back">BACK VIEW</button>
+      <button class="cam-btn" data-cam="left">LEFT VIEW</button>
+      <button class="cam-btn" data-cam="right">RIGHT VIEW</button>
+      <button class="cam-btn" data-cam="top">TOP VIEW</button>
+      <button class="cam-btn active" data-cam="iso">ISOMETRIC VIEW</button>
+      <button class="cam-btn" data-cam="under">DƯỚI MÁI / SAU QUẦY</button>
+      <button class="cam-btn reset" data-cam="reset">↺ RESET CAMERA</button>
+    </div>
+
+    <div class="toggle-group">
+      <button class="chip-btn active" id="btnToggleGate" title="Bật/tắt mô hình Cổng trại bao trùm phía trên gian hàng">⛩️ Cổng trại</button>
+      <button class="chip-btn" id="btnHideRoof" title="Ẩn/hiện hệ mái để soi kết cấu bên dưới">Ẩn mái</button>
+      <button class="chip-btn" id="btnHideSigns" title="Ẩn/hiện bảng hiệu để xem thanh xà đỡ">Ẩn bảng hiệu</button>
+      <button class="chip-btn active" id="btnToggleDims" title="Bật/tắt thước đo kích thước 3D">📐 Thước 3D</button>
+      <button class="chip-btn active" id="btnToggleGrid" title="Bật/tắt lưới mặt đất">⊞ Lưới</button>
+      <button class="chip-btn" id="btnToggleWireframe" title="Chế độ khung dây (Wireframe)">◇ Khung dây</button>
+      <button class="chip-btn active" id="btnToggleBg" title="Bật/tắt phông bầu trời vũ trụ">🌌 Nền</button>
+      <button class="chip-btn" id="btnToggleDayNight" title="Chuyển đổi chế độ Ban ngày / Ban đêm">☀️ Ban ngày</button>
+    </div>
+  </div>
+
+  <!-- ======================== KHU VỰC TRUNG TÂM ======================== -->
+  <main class="workspace">
+    <!-- Viewport 3D -->
+    <div class="viewport" id="viewportContainer">
+      <canvas id="threeCanvas"></canvas>
+
+      <!-- Hộp thông tin nhanh góc trái trên -->
+      <div class="hud-top-left">
+        <div class="hud-summary" id="hudSummary">
+          <span>Kích thước: <strong id="hudDimText">3.0 × 2.0 × 2.6 m</strong></span>
+          <span class="sep">•</span>
+          <span>Cấu kiện: <strong id="hudPartCount">0</strong></span>
+          <span class="sep">•</span>
+          <span>Lối phục vụ: <strong id="hudAisleText">0.65 m</strong></span>
+        </div>
+        <div class="hud-hint">
+          🖱️ <strong>Chuột trái:</strong> Xoay 360° &nbsp;|&nbsp; <strong>Chuột phải:</strong> Di chuyển &nbsp;|&nbsp; <strong>Con lăn:</strong> Phóng to/thu nhỏ &nbsp;|&nbsp; <strong>Click vật thể:</strong> Xem thông số lắp đặt
+        </div>
+      </div>
+
+      <!-- Thẻ hướng dẫn giai đoạn thi công (nổi góc trái dưới trong Construction Mode) -->
+      <section class="stage-guide-card hidden" id="stageGuideCard" aria-live="polite">
+        <div class="stage-guide-header">
+          <div>
+            <span class="stage-badge" id="stageBadgeCode">GĐ 0</span>
+            <h3 id="stageGuideTitle">Khảo sát mặt bằng</h3>
+          </div>
+          <button class="icon-close" id="btnMinimizeStageCard" title="Thu gọn/Mở rộng">▾</button>
+        </div>
+        <div class="stage-guide-body" id="stageGuideBody">
+          <p class="stage-summary" id="stageGuideSummary"></p>
+          <div class="stage-section-label">Các bước thực hiện:</div>
+          <ol class="stage-step-list" id="stageStepList"></ol>
+          <div class="stage-section-label">Vật tư sử dụng ở bước này:</div>
+          <ul class="stage-mat-list" id="stageMatList"></ul>
+          <div class="stage-safety-box" id="stageSafetyBox"></div>
+        </div>
+      </section>
+
+      <!-- Thẻ thông tin cấu kiện khi Click chọn trên mô hình 3D -->
+      <aside class="inspector-card hidden" id="partInspectorCard" aria-live="polite">
+        <div class="inspector-header">
+          <div>
+            <span class="inspector-tag" id="inspStageTag">GĐ 2</span>
+            <h4 id="inspTitle">Cột chính C1</h4>
+          </div>
+          <button class="icon-close" id="btnCloseInspector" title="Bỏ chọn cấu kiện">✕</button>
+        </div>
+        <div class="inspector-grid">
+          <div class="insp-row"><span>Loại cấu kiện:</span><strong id="inspType">—</strong></div>
+          <div class="insp-row"><span>Vật liệu:</span><strong id="inspMaterial">—</strong></div>
+          <div class="insp-row"><span>Kích thước:</span><strong id="inspDims">—</strong></div>
+          <div class="insp-row"><span>Số lượng:</span><strong id="inspQty">—</strong></div>
+          <div class="insp-row full"><span>Vai trò kết cấu:</span><p id="inspRole">—</p></div>
+          <div class="insp-row full"><span>Cách lắp đặt:</span><p id="inspInstall">—</p></div>
+        </div>
+        <div class="inspector-footer">
+          <button class="sm-btn" id="btnJumpToPartStage">Xem công đoạn lắp cấu kiện này →</button>
+        </div>
+      </aside>
+
+      <!-- ======================== PANEL MATERIALS (BILL OF MATERIALS) ======================== -->
+      <section class="modal-panel hidden" id="panelMaterials">
+        <div class="modal-header">
+          <div>
+            <h2>BILL OF MATERIALS — DỰ TOÁN VẬT TƯ & TỐI ƯU CẮT CÂY</h2>
+            <p>Tự động tính toán từ hình học 3D thực tế. Cho phép chỉnh sửa đơn giá VND và kiểm soát ngân sách sinh viên.</p>
+          </div>
+          <div class="modal-header-actions">
+            <button class="sm-btn" id="btnResetPrices">↺ Giá mặc định</button>
+            <button class="sm-btn primary" id="btnExportCSV">⬇ Xuất CSV Dự toán</button>
+            <button class="icon-close" data-close-modal="panelMaterials">✕</button>
+          </div>
+        </div>
+
+        <div class="bom-summary-bar">
+          <div class="bom-kpi">
+            <span>1. Hệ khung & Mái</span>
+            <strong id="bomSubFrame">0 ₫</strong>
+          </div>
+          <div class="bom-kpi">
+            <span>2. Quầy phục vụ</span>
+            <strong id="bomSubCounter">0 ₫</strong>
+          </div>
+          <div class="bom-kpi">
+            <span>3. Bảng hiệu & Trang trí</span>
+            <strong id="bomSubDecor">0 ₫</strong>
+          </div>
+          <div class="bom-kpi">
+            <span>4. Điện & Đèn LED</span>
+            <strong id="bomSubElectric">0 ₫</strong>
+          </div>
+          <div class="bom-kpi">
+            <span>Dự phòng (8%)</span>
+            <strong id="bomContingency">0 ₫</strong>
+          </div>
+          <div class="bom-kpi total">
+            <span>TỔNG NGÂN SÁCH</span>
+            <strong id="bomGrandTotal">0 ₫</strong>
+          </div>
+          <div class="bom-budget-input">
+            <label for="inputBudgetLimit">Trần ngân sách lớp (VND):</label>
+            <input type="number" id="inputBudgetLimit" value="5500000" step="100000" min="500000" />
+          </div>
+        </div>
+
+        <div class="budget-alert" id="budgetAlertBox"></div>
+
+        <div class="bom-content-scroll">
+          <table class="bom-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Công đoạn</th>
+                <th>Hạng mục vật tư</th>
+                <th>Quy cách / Tính toán từ mô hình 3D</th>
+                <th class="num">SL</th>
+                <th>Đơn vị</th>
+                <th class="num">Đơn giá (VND)</th>
+                <th class="num">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody id="bomTableBody"></tbody>
+          </table>
+
+          <div class="cutplan-section">
+            <h3>Sơ đồ tối ưu cắt cây nguyên (Thuật toán ghép thanh 1D giảm thiểu đề-xê)</h3>
+            <div class="cutplan-grid" id="cutPlanContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== PANEL BLUEPRINT (BẢN VẼ KỸ THUẬT 2D) ======================== -->
+      <section class="modal-panel hidden" id="panelBlueprint">
+        <div class="modal-header">
+          <div>
+            <h2>TECHNICAL BLUEPRINT — BẢN VẼ KỸ THUẬT THI CÔNG 2D</h2>
+            <p>Mặt đứng chính, Mặt bằng định vị cột & phân khu, Mặt cắt bên và Chi tiết liên kết tre – chân đế.</p>
+          </div>
+          <div class="modal-header-actions">
+            <button class="sm-btn primary" id="btnDownloadBlueprint">⬇ Tải ảnh Bản vẽ Kỹ thuật (PNG)</button>
+            <button class="icon-close" data-close-modal="panelBlueprint">✕</button>
+          </div>
+        </div>
+        <div class="blueprint-wrap">
+          <canvas id="blueprintCanvas" width="1600" height="1000"></canvas>
+        </div>
+      </section>
+
+      <!-- ======================== PANEL EXPORT & TÀI LIỆU THI CÔNG ======================== -->
+      <section class="modal-panel hidden" id="panelExport">
+        <div class="modal-header">
+          <div>
+            <h2>EXPORT & DOCUMENTATION — XUẤT DỮ LIỆU & HƯỚNG DẪN THI CÔNG</h2>
+            <p>Tải mô hình 3D chuẩn GLB/GLTF, bảng dự toán CSV, bản vẽ kỹ thuật PNG và cẩm nang thi công thực tế.</p>
+          </div>
+          <div class="modal-header-actions">
+            <button class="icon-close" data-close-modal="panelExport">✕</button>
+          </div>
+        </div>
+        <div class="export-grid">
+          <div class="export-card">
+            <h3>📦 Xuất Mô hình 3D (.GLB)</h3>
+            <p>Xuất toàn bộ hình học 3D gian hàng hiện tại sang định dạng chuẩn GLB (Binary glTF 2.0) dùng cho Blender, SketchUp, PowerPoint 3D hoặc AR viewer.</p>
+            <button class="sm-btn primary" id="btnExportGLB">⬇ Tải tệp Galactic_Booth.glb</button>
+          </div>
+          <div class="export-card">
+            <h3>📊 Xuất Bảng Dự Toán (.CSV)</h3>
+            <p>Xuất danh sách vật tư, quy cách cắt cây và đơn giá VND sang bảng tính Excel / Google Sheets để gửi thủ quỹ lớp.</p>
+            <button class="sm-btn primary" id="btnExportCSV2">⬇ Tải tệp Du_Toan_Vat_Tu.csv</button>
+          </div>
+          <div class="export-card">
+            <h3>📷 Chụp Phối Cảnh 3D & Bản Vẽ 2D</h3>
+            <p>Lưu ảnh phối cảnh 3D độ phân giải cao hoặc bản vẽ kỹ thuật 4 góc chiếu để in kẹp hồ sơ duyệt trại.</p>
+            <div class="btn-row">
+              <button class="sm-btn" id="btnExportPNG2">📷 Lưu ảnh 3D PNG</button>
+              <button class="sm-btn" id="btnExportBlueprint2">📐 Lưu Bản vẽ 2D PNG</button>
+            </div>
+          </div>
+          <div class="export-card">
+            <h3>📘 Tài liệu Hướng dẫn Thi công Thực tế</h3>
+            <p>Tài liệu 15 mục chi tiết từng bước cắt tre, đổ chân đế, dựng khung, đi dây điện 12V và kiểm tra an toàn ngoài đời.</p>
+            <a class="sm-btn primary" href="./HUONG_DAN_THI_CONG_GIAN_HANG.md" download="HUONG_DAN_THI_CONG_GIAN_HANG.md">⬇ Tải HUONG_DAN_THI_CONG_GIAN_HANG.md</a>
+          </div>
+        </div>
+        <div class="manual-preview">
+          <h3>Tóm tắt Quy trình Tổ chức Thi công & An toàn Kết cấu Ngoài đời</h3>
+          <div class="manual-columns" id="manualSummaryContainer"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================== BẢNG ĐIỀU KHIỂN BÊN PHẢI (RIGHT PANEL) ======================== -->
+    <aside class="right-panel" id="rightPanel">
+      <div class="rpanel-tabs">
+        <button class="rtab active" data-rtab="tab-dim">Kích thước & Vật liệu</button>
+        <button class="rtab" data-rtab="tab-decor">Trang trí & Bật/Tắt</button>
+        <button class="rtab" data-rtab="tab-logo">Logo & Ánh sáng</button>
+      </div>
+
+      <!-- TAB 1: KÍCH THƯỚC & VẬT LIỆU -->
+      <div class="rtab-content active" id="tab-dim">
+        <div class="panel-group">
+          <div class="group-title">
+            <span>1. KÍCH THƯỚC GIAN HÀNG RIÊNG (MÉT)</span>
+            <button class="link-btn" id="btnResetDims">Mặc định (3×2×2.6m)</button>
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slWidth">Chiều ngang gian hàng (W)</label>
+              <output id="outWidth">3.00 m</output>
+            </div>
+            <input type="range" id="slWidth" min="2.0" max="4.5" step="0.1" value="3.0" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slDepth">Chiều sâu gian hàng (D)</label>
+              <output id="outDepth">2.00 m</output>
+            </div>
+            <input type="range" id="slDepth" min="1.5" max="3.0" step="0.1" value="2.0" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slHeight">Chiều cao gian hàng (H)</label>
+              <output id="outHeight">2.60 m</output>
+            </div>
+            <input type="range" id="slHeight" min="2.3" max="3.2" step="0.05" value="2.6" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slCounterH">Chiều cao mặt quầy</label>
+              <output id="outCounterH">0.85 m</output>
+            </div>
+            <input type="range" id="slCounterH" min="0.75" max="1.0" step="0.01" value="0.85" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slCounterD">Chiều sâu mặt quầy</label>
+              <output id="outCounterD">0.60 m</output>
+            </div>
+            <input type="range" id="slCounterD" min="0.45" max="0.8" step="0.05" value="0.60" />
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title">
+            <span>2. KÍCH THƯỚC CỔNG TRẠI RIÊNG (MÉT)</span>
+            <button class="link-btn" id="btnResetGateDims">Mặc định (3.32×3.8m)</button>
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slGateSpan">Chiều rộng lọt lòng cổng</label>
+              <output id="outGateSpan">3.32 m</output>
+            </div>
+            <input type="range" id="slGateSpan" min="2.2" max="6.0" step="0.05" value="3.32" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slGateHeight">Chiều cao tổng cổng trại</label>
+              <output id="outGateHeight">3.80 m</output>
+            </div>
+            <input type="range" id="slGateHeight" min="2.8" max="5.2" step="0.05" value="3.80" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slGateLadderW">Bề rộng mỗi trụ thang cổng</label>
+              <output id="outGateLadderW">0.54 m</output>
+            </div>
+            <input type="range" id="slGateLadderW" min="0.35" max="0.90" step="0.02" value="0.54" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slGateOffsetZ">Khoảng cách cổng trước gian hàng</label>
+              <output id="outGateOffsetZ">0.34 m</output>
+            </div>
+            <input type="range" id="slGateOffsetZ" min="-0.50" max="1.50" step="0.05" value="0.34" />
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-head">
+              <label for="slGateHeaderScale">Tỷ lệ cỡ Băng rôn & Quả cầu đỉnh</label>
+              <output id="outGateHeaderScale">100%</output>
+            </div>
+            <input type="range" id="slGateHeaderScale" min="0.70" max="1.40" step="0.05" value="1.00" />
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title"><span>VẬT LIỆU KẾT CẤU CHÍNH</span></div>
+          <div class="mat-cards">
+            <label class="mat-card active">
+              <input type="radio" name="boothMaterial" value="natural" checked />
+              <span class="swatch bamboo-nat"></span>
+              <div>
+                <strong>Tre tự nhiên</strong>
+                <small>Tre đực Ø8–10cm, mộc mạc, rẻ nhất</small>
+              </div>
+            </label>
+            <label class="mat-card">
+              <input type="radio" name="boothMaterial" value="painted" />
+              <span class="swatch bamboo-pu"></span>
+              <div>
+                <strong>Tre sơn phủ PU</strong>
+                <small>Vàng óng, bóng đẹp, chống ẩm</small>
+              </div>
+            </label>
+            <label class="mat-card">
+              <input type="radio" name="boothMaterial" value="wood" />
+              <span class="swatch wood-swatch"></span>
+              <div>
+                <strong>Gỗ keo xẻ</strong>
+                <small>Tiết diện vuông, bắt vít nhanh</small>
+              </div>
+            </label>
+            <label class="mat-card">
+              <input type="radio" name="boothMaterial" value="pvc" />
+              <span class="swatch pvc-swatch"></span>
+              <div>
+                <strong>Ống PVC giả tre</strong>
+                <small>Đồng đều, nhẹ, tái sử dụng nhiều lần</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title"><span>THÔNG SỐ KỸ THUẬT TỰ ĐỘNG</span></div>
+          <div class="spec-mini-grid" id="liveTechSpecs"></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TRANG TRÍ & BẬT/TẮT BỘ PHẬN -->
+      <div class="rtab-content" id="tab-decor">
+        <div class="panel-group">
+          <div class="group-title">
+            <span>TRANG TRÍ VŨ TRỤ & AN TOÀN THÔNG TIN</span>
+          </div>
+          <div class="check-list">
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="campGate" checked />
+              <span>⛩️ Cổng trại lớn (Trụ thang, Quả cầu, Băng rôn)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="stars" checked />
+              <span>⭐ Ngôi sao tre 3D treo & sao nhỏ</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="planets" checked />
+              <span>🪐 Hành tinh & quỹ đạo ống PVC</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="security" checked />
+              <span>🛡️ Biểu tượng ATTT (Khiên, Khóa, 0–1, Mạch)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="leds" checked />
+              <span>💡 Hệ thống dây đèn LED & nguồn 12V</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="backdrop" checked />
+              <span>🌌 Phông nền bạt in dải ngân hà</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title"><span>BẬT / TẮT TỪNG BẢNG HIỆU & LOGO</span></div>
+          <div class="check-list">
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="logo_ptit" checked />
+              <span>🔴 Biển tròn Logo PTIT (Trái)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="logo_str4" checked />
+              <span>🔵 Bảng Logo STR4.SEC</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="logo_d26" checked />
+              <span>🦉 Bảng trung tâm An toàn thông tin D26</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="logo_doan" checked />
+              <span>🟢 Biển tròn Logo Đoàn Thanh niên (Phải)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="cloudSign" checked />
+              <span>☁️ Biển mây "Ẩm thực Ngân hà" trước quầy</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title"><span>BẬT / TẮT CẤU KIỆN KẾT CẤU</span></div>
+          <div class="check-list">
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="roof" checked />
+              <span>🏠 Hệ mái (Đòn tay & nan tre song song)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="posts" checked />
+              <span>🎋 Hệ cột đứng chính (C1–C5)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="beams" checked />
+              <span>📏 Hệ xà ngang, xà dọc & giằng chân</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="braces" checked />
+              <span>📐 Thanh chống góc & giằng chéo chữ X</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="joints" checked />
+              <span>🔩 Mối nối bu lông M8 & dây buộc mây</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="footings" checked />
+              <span>🪣 Chân đế xô bê tông & bao cát</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="counter" checked />
+              <span>🍱 Quầy phục vụ ốp nan tre</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" data-group-toggle="furniture" checked />
+              <span>🧊 Tủ, bàn sơ chế, thùng đá & kệ Menu</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: LOGO & ÁNH SÁNG -->
+      <div class="rtab-content" id="tab-logo">
+        <div class="panel-group">
+          <div class="group-title"><span>CHẾ ĐỘ ÁNH SÁNG & HIỆU ỨNG LED</span></div>
+          <div class="lighting-controls">
+            <div class="mode-switch">
+              <button class="mode-btn active" data-time="day">☀️ Ban ngày</button>
+              <button class="mode-btn" data-time="night">🌙 Ban đêm (Rực rỡ LED)</button>
+            </div>
+            <label class="check-item" style="margin-top:8px">
+              <input type="checkbox" id="chkLedPower" checked />
+              <span>⚡ Bật nguồn đèn LED xanh #00CFFF & sao vàng ấm</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-title">
+            <span>QUẢN LÝ & UPLOAD 4 LOGO NHẬN DIỆN</span>
+            <button class="link-btn" id="btnRestoreDefaultLogos">Khôi phục gốc</button>
+          </div>
+          <p class="panel-note">
+            Mặc định sử dụng nguyên bản 4 tệp logo đã cung cấp. Bạn có thể tải ảnh mới lên hoặc chỉnh cỡ hiển thị (giữ nguyên tỷ lệ gốc, không méo).
+          </p>
+
+          <!-- Upload PTIT -->
+          <div class="logo-upload-item">
+            <div class="logo-item-head">
+              <strong>1. Logo PTIT (Biển tròn trái)</strong>
+              <label class="upload-btn">
+                📁 Upload PTIT Logo
+                <input type="file" accept="image/*" data-logo-upload="ptit" hidden />
+              </label>
+            </div>
+            <div class="logo-scale-row">
+              <span>Cỡ hiển thị:</span>
+              <input type="range" min="0.7" max="1.25" step="0.05" value="1.0" data-logo-scale="ptit" />
+            </div>
+          </div>
+
+          <!-- Upload STR4.SEC -->
+          <div class="logo-upload-item">
+            <div class="logo-item-head">
+              <strong>2. Logo STR4.SEC (Bảng trái-giữa)</strong>
+              <label class="upload-btn">
+                📁 Upload STR4.SEC Logo
+                <input type="file" accept="image/*" data-logo-upload="str4" hidden />
+              </label>
+            </div>
+            <div class="logo-scale-row">
+              <span>Cỡ hiển thị:</span>
+              <input type="range" min="0.7" max="1.25" step="0.05" value="1.0" data-logo-scale="str4" />
+            </div>
+          </div>
+
+          <!-- Upload D26 -->
+          <div class="logo-upload-item">
+            <div class="logo-item-head">
+              <strong>3. Logo ATTT D26 (Bảng trung tâm)</strong>
+              <label class="upload-btn">
+                📁 Upload D26 Logo
+                <input type="file" accept="image/*" data-logo-upload="d26" hidden />
+              </label>
+            </div>
+            <div class="logo-scale-row">
+              <span>Cỡ hiển thị:</span>
+              <input type="range" min="0.7" max="1.25" step="0.05" value="1.0" data-logo-scale="d26" />
+            </div>
+          </div>
+
+          <!-- Upload Đoàn TN -->
+          <div class="logo-upload-item">
+            <div class="logo-item-head">
+              <strong>4. Logo Đoàn Thanh niên (Biển tròn phải)</strong>
+              <label class="upload-btn">
+                📁 Upload Đoàn TN Logo
+                <input type="file" accept="image/*" data-logo-upload="doan" hidden />
+              </label>
+            </div>
+            <div class="logo-scale-row">
+              <span>Cỡ hiển thị:</span>
+              <input type="range" min="0.7" max="1.25" step="0.05" value="1.0" data-logo-scale="doan" />
+            </div>
+          </div>
+
+          <label class="check-item" style="margin-top:6px">
+            <input type="checkbox" id="chkShowPlaceholders" />
+            <span>Hiển thị khung vùng Placeholder (ẩn ảnh logo)</span>
+          </label>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ======================== THANH DƯỚI CÙNG: TIẾN TRÌNH THI CÔNG (CONSTRUCTION TIMELINE) ======================== -->
+  <footer class="bottom-bar">
+    <div class="playback-controls">
+      <button class="ctrl-btn" id="btnPrevStage" title="Giai đoạn trước">⏮ Prev</button>
+      <button class="ctrl-btn play" id="btnPlayPause" title="Tự động chạy mô phỏng lắp ráp từ GĐ0 → GĐ8">▶ Play</button>
+      <button class="ctrl-btn" id="btnNextStage" title="Giai đoạn tiếp theo">Next ⏭</button>
+      <div class="speed-select">
+        <label for="selSpeed">Tốc độ:</label>
+        <select id="selSpeed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1.0×</option>
+          <option value="2">2.0×</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stage-timeline" id="stageTimelineButtons">
+      <button class="stage-pill" data-stage="0"><span>GĐ0</span><small>Khảo sát</small></button>
+      <button class="stage-pill" data-stage="1"><span>GĐ1</span><small>Chân đế</small></button>
+      <button class="stage-pill" data-stage="2"><span>GĐ2</span><small>Dựng cột</small></button>
+      <button class="stage-pill" data-stage="3"><span>GĐ3</span><small>Xà & Giằng</small></button>
+      <button class="stage-pill" data-stage="4"><span>GĐ4</span><small>Khung mái</small></button>
+      <button class="stage-pill" data-stage="5"><span>GĐ5</span><small>Quầy tre</small></button>
+      <button class="stage-pill" data-stage="6"><span>GĐ6</span><small>Bảng & Logo</small></button>
+      <button class="stage-pill" data-stage="7"><span>GĐ7</span><small>Vũ trụ & LED</small></button>
+      <button class="stage-pill active" data-stage="8"><span>GĐ8</span><small>Hoàn thiện</small></button>
+    </div>
+
+    <div class="scrub-box">
+      <div class="scrub-head">
+        <span id="scrubStageLabel">GĐ8 · Hoàn thiện & kiểm tra</span>
+        <strong id="scrubPctLabel">100%</strong>
+      </div>
+      <input type="range" id="slStageScrub" min="0" max="1" step="0.01" value="1" title="Kéo để xem trước và sau khi lắp từng cấu kiện trong giai đoạn" />
+    </div>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
